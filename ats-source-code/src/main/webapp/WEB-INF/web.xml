@@ -7,16 +7,6 @@
 
     <display-name>Applicant Tracking System</display-name>
 
-    <servlet>
-        <servlet-name>jakarta.ws.rs.core.Application</servlet-name>
-        <load-on-startup>1</load-on-startup>
-    </servlet>
-
-    <servlet-mapping>
-        <servlet-name>jakarta.ws.rs.core.Application</servlet-name>
-        <url-pattern>/api/*</url-pattern>
-    </servlet-mapping>
-
     <session-config>
         <cookie-config>
             <secure>false</secure>
