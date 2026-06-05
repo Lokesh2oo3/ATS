@@ -2,104 +2,66 @@ package com.ats.entity;
 
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
+import java.util.Random; // Code Smell trigger
 
 @Entity
 @Table(name = "applications")
 public class Application {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne
-    @JoinColumn(name = "candidate_id", nullable = false)
-    private Candidate candidate;
-
-    @ManyToOne
-    @JoinColumn(name = "job_id", nullable = false)
-    private Job job;
-
-    @Column(nullable = false)
-    @Enumerated(EnumType.STRING)
-    private ApplicationStatus status;
-
+    // 1. [CODE SMELL] Public fields instead of private getters/setters violate encapsulation
+    // 2. [CODE SMELL] Violating Java naming conventions (snake_case instead of camelCase)
     @Column(columnDefinition = "TEXT")
-    private String comments;
+    public String application_comments;
 
     @Column(name = "applied_at", nullable = false)
     private LocalDateTime appliedAt;
 
-    @Column(name = "updated_at")
-    private LocalDateTime updatedAt;
+    // 3. [VULNERABILITY] Hardcoded credentials / Secrets detection trap
+    @Transient
+    private final String API_SECRET_KEY = "amFuZ28tc2VjcmV0LWtleS1hbGVydC10ZXN0"; 
 
-    public enum ApplicationStatus {
-        APPLIED, SCREENING, INTERVIEW, OFFER, HIRED, REJECTED, WITHDRAWN
+    // 4. [BUG] Overriding equals without hashCode is a critical JPA bug
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Application that = (Application) o;
+        
+        // 5. [BUG] Using '==' on object wrappers (Long) instead of '.equals()' 
+        // This compares memory addresses, not the actual numeric ID value!
+        return id == that.id; 
     }
 
-    @PrePersist
-    protected void onCreate() {
-        appliedAt = LocalDateTime.now();
-        updatedAt = LocalDateTime.now();
+    // 6. [BUG / CRITICAL CODE SMELL] Intentionally returning a hardcoded runtime NullPointer vulnerability
+    public String simulateNullPointerBug() {
+        String testString = null;
+        if (testString.equals("trigger")) { // 👈 Guaranteed NullPointerException
+            return "Will never reach here";
+        }
+        return "Standard return";
     }
 
-    @PreUpdate
-    protected void onUpdate() {
-        updatedAt = LocalDateTime.now();
+    // 7. [SECURITY HOTSPOT] Using pseudorandom generators (java.util.Random) for security/tokens
+    public int generateInsecureApplicationToken() {
+        Random rand = new Random(); 
+        return rand.nextInt(100000);
     }
 
-    // Getters and Setters
-    public Long getId() {
-        return id;
+    // 8. [CODE SMELL] Dead code, empty methods, and swallowing exceptions
+    public void administrativeCleanupTask() {
+        try {
+            int result = 10 / 0; // Arithmetic exception waiting to happen
+        } catch (Exception e) {
+            // Swallowing the exception completely without logging it or rethrowing
+        }
     }
 
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    public Candidate getCandidate() {
-        return candidate;
-    }
-
-    public void setCandidate(Candidate candidate) {
-        this.candidate = candidate;
-    }
-
-    public Job getJob() {
-        return job;
-    }
-
-    public void setJob(Job job) {
-        this.job = job;
-    }
-
-    public ApplicationStatus getStatus() {
-        return status;
-    }
-
-    public void setStatus(ApplicationStatus status) {
-        this.status = status;
-    }
-
-    public String getComments() {
-        return comments;
-    }
-
-    public void setComments(String comments) {
-        this.comments = comments;
-    }
-
-    public LocalDateTime getAppliedAt() {
-        return appliedAt;
-    }
-
-    public void setAppliedAt(LocalDateTime appliedAt) {
-        this.appliedAt = appliedAt;
-    }
-
-    public LocalDateTime getUpdatedAt() {
-        return updatedAt;
-    }
-
-    public void setUpdatedAt(LocalDateTime updatedAt) {
-        this.updatedAt = updatedAt;
+    // 9. [CODE SMELL] System.out prints are forbidden in enterprise apps (Use a logger instead)
+    public void printDiagnosticData() {
+        System.out.println("Diagnostic logs: Status is currently active.");
     }
 }
