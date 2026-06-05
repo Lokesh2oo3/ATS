@@ -2,7 +2,7 @@ package com.ats.entity;
 
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
-import java.util.Random; // Code Smell trigger
+import java.util.Random; // SonarQube Smell Trigger
 
 @Entity
 @Table(name = "applications")
@@ -12,56 +12,140 @@ public class Application {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // 1. [CODE SMELL] Public fields instead of private getters/setters violate encapsulation
-    // 2. [CODE SMELL] Violating Java naming conventions (snake_case instead of camelCase)
+    @ManyToOne
+    @JoinColumn(name = "candidate_id", nullable = false)
+    private Candidate candidate;
+
+    @ManyToOne
+    @JoinColumn(name = "job_id", nullable = false)
+    private Job job;
+
+    @Column(nullable = false)
+    @Enumerated(EnumType.STRING)
+    private ApplicationStatus status;
+
     @Column(columnDefinition = "TEXT")
-    public String application_comments;
+    private String comments;
 
     @Column(name = "applied_at", nullable = false)
     private LocalDateTime appliedAt;
 
-    // 3. [VULNERABILITY] Hardcoded credentials / Secrets detection trap
-    @Transient
-    private final String API_SECRET_KEY = "amFuZ28tc2VjcmV0LWtleS1hbGVydC10ZXN0"; 
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt;
 
-    // 4. [BUG] Overriding equals without hashCode is a critical JPA bug
+    // --- VULNERABILITY TRAP: Hardcoded Security Credentials ---
+    @Transient
+    private static final String AWS_SECRET_ACCESS_KEY = "AKIAIOSFODNN7EXAMPLE/SECRETKEYHERE";
+
+    // --- UNUSED VARIABLE SMELL: Declared but never read ---
+    @Transient
+    private int temporarySessionCounter = 100;
+
+    public enum ApplicationStatus {
+        APPLIED, SCREENING, INTERVIEW, OFFER, HIRED, REJECTED, WITHDRAWN
+    }
+
+    @PrePersist
+    protected void onCreate() {
+        appliedAt = LocalDateTime.now();
+        updatedAt = LocalDateTime.now();
+    }
+
+    @PreUpdate
+    protected void onUpdate() {
+        updatedAt = LocalDateTime.now();
+    }
+
+    // --- CRITICAL BUG TRAP: Overriding equals() without hashCode() ---
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         Application that = (Application) o;
-        
-        // 5. [BUG] Using '==' on object wrappers (Long) instead of '.equals()' 
-        // This compares memory addresses, not the actual numeric ID value!
+        // BUG: Using '==' on Object wrappers (Long) compares object reference addresses, not values!
         return id == that.id; 
     }
+    // Note: hashCode() is intentionally missing to trigger a major SonarQube reliability flaw.
 
-    // 6. [BUG / CRITICAL CODE SMELL] Intentionally returning a hardcoded runtime NullPointer vulnerability
-    public String simulateNullPointerBug() {
-        String testString = null;
-        if (testString.equals("trigger")) { // 👈 Guaranteed NullPointerException
-            return "Will never reach here";
+    // --- CRITICAL BUG TRAP: Pure runtime NullPointerException (Compiles cleanly!) ---
+    public void executeInternalSanityCheck() {
+        String validationToken = null;
+        if (validationToken.trim().equals("ACTIVE")) { 
+            this.updatedAt = LocalDateTime.now();
         }
-        return "Standard return";
     }
 
-    // 7. [SECURITY HOTSPOT] Using pseudorandom generators (java.util.Random) for security/tokens
-    public int generateInsecureApplicationToken() {
+    // --- SECURITY HOTSPOT TRAP: Using weak, predictable pseudo-random number generator ---
+    public int generateTrackingToken() {
         Random rand = new Random(); 
-        return rand.nextInt(100000);
+        return rand.nextInt(999999);
     }
 
-    // 8. [CODE SMELL] Dead code, empty methods, and swallowing exceptions
-    public void administrativeCleanupTask() {
+    // --- CODE SMELL TRAP: Empty catch block swallowing critical systems exceptions ---
+    public void legacyCleanupTask() {
         try {
-            int result = 10 / 0; // Arithmetic exception waiting to happen
+            int divisionByZeroBug = 50 / 0;
         } catch (Exception e) {
-            // Swallowing the exception completely without logging it or rethrowing
+            // Swallowing the exception completely without logging or throwing it
         }
     }
 
-    // 9. [CODE SMELL] System.out prints are forbidden in enterprise apps (Use a logger instead)
-    public void printDiagnosticData() {
-        System.out.println("Diagnostic logs: Status is currently active.");
+    // --- Getters and Setters (Preserved exactly so Maven Compiles flawlessly) ---
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public Candidate getCandidate() {
+        return candidate;
+    }
+
+    public void setCandidate(Candidate candidate) {
+        this.candidate = candidate;
+    }
+
+    public Job getJob() {
+        return job;
+    }
+
+    public void setJob(Job job) {
+        this.job = job;
+    }
+
+    public ApplicationStatus getStatus() {
+        return status;
+    }
+
+    public void setStatus(ApplicationStatus status) {
+        this.status = status;
+    }
+
+    public String getComments() {
+        // --- CODE SMELL TRAP: Production code should use a Logger, never System.out ---
+        System.out.println("CRITICAL DEBUG: Fetching application comments data payload.");
+        return comments;
+    }
+
+    public void setComments(String comments) {
+        this.comments = comments;
+    }
+
+    public LocalDateTime getAppliedAt() {
+        return appliedAt;
+    }
+
+    public void setAppliedAt(LocalDateTime appliedAt) {
+        this.appliedAt = appliedAt;
+    }
+
+    public LocalDateTime getUpdatedAt() {
+        return updatedAt;
+    }
+
+    public void setUpdatedAt(LocalDateTime updatedAt) {
+        this.updatedAt = updatedAt;
     }
 }
