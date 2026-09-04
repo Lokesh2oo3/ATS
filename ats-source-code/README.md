@@ -21,3 +21,4 @@ This is a Java-based web application designed for deployment on a WildFly server
 - `pom.xml`: Maven configuration
 
 Just a small change
+Another change after the small change
