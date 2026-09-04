@@ -19,3 +19,5 @@ This is a Java-based web application designed for deployment on a WildFly server
 - `src/main/resources`: Configuration files (persistence.xml)
 - `src/main/webapp`: Frontend assets and web.xml
 - `pom.xml`: Maven configuration
+
+Just a small change
